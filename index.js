@@ -10,6 +10,7 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
+app.use(express.json());
 
 const exportDashboard = async (url) => {
   const browser = await puppeteer.launch();
@@ -25,7 +26,7 @@ const exportDashboard = async (url) => {
 };
 
 const transporter = nodemailer.createTransport({
-  host: "smtp.sendgrid.net",
+  host: process.env.SENDGRID_HOST,
   port: 587,
   auth: {
     user: "apikey",
@@ -39,10 +40,10 @@ app.post("/export", async (req, res) => {
   const pdfBuffer = await exportDashboard(dashboardUrl);
 
   const buffer = Buffer.from(pdfBuffer);
-  // Set response headers
+
   res.set({
     "Content-Type": "application/pdf",
-    "Content-Disposition": 'inline; filename="file.pdf"', // 'attachment' if you want to force download
+    "Content-Disposition": 'inline; filename="file.pdf"',
     "Content-Length": buffer.length,
   });
 
@@ -50,7 +51,13 @@ app.post("/export", async (req, res) => {
 });
 
 app.post("/send-email", async (req, res) => {
-  const dashboardUrl = "http://localhost:3000/hidden-dashboard";
+  const body = req.body;
+  const email = body?.email;
+  if (!email) {
+    return res.status(400).send("Please provide an email");
+  }
+
+  const dashboardUrl = body?.dashboardUrl;
   if (!dashboardUrl) {
     return res.status(400).send("Please provide a valid URL");
   }
@@ -58,7 +65,7 @@ app.post("/send-email", async (req, res) => {
 
   const info = await transporter.sendMail({
     from: `'Data Insight' <${process.env.SENDGRID_SENDER_EMAIL}>`,
-    to: "alexmartinez.mm98@gmail.com",
+    to: email,
     subject: "Data Insight Report",
     text: "This is the data insight report",
     html: "<b>This is the data insight report</b>", // html body
@@ -70,7 +77,7 @@ app.post("/send-email", async (req, res) => {
     ],
   });
 
-  res.send("Message sent: %s", info.messageId);
+  res.send(`Message sent: ${info.messageId}`);
 });
 
 app.listen(port, () => {
