@@ -16,11 +16,14 @@ const exportDashboard = async (url) => {
   const browser = await puppeteer.launch();
   const page = await browser.newPage();
   await page.goto(url, { waitUntil: "networkidle0" });
+  await page.setViewport({ width: 1080, height: 1920, deviceScaleFactor: 2 });
   await page.emulateMediaType("screen");
+
   const pdfBuffer = await page.pdf({
     format: "A4",
     printBackground: true,
   });
+
   await browser.close();
   return pdfBuffer;
 };
@@ -32,6 +35,7 @@ const transporter = nodemailer.createTransport({
     user: "apikey",
     pass: process.env.SENDGRID_API_KEY,
   },
+  from: process.env.SENDGRID_SENDER_EMAIL,
 });
 
 app.post("/export", async (req, res) => {
@@ -68,11 +72,11 @@ app.post("/send-email", async (req, res) => {
   const pdfBuffer = await exportDashboard(dashboardUrl);
 
   const info = await transporter.sendMail({
-    from: `'Data Insight' <${process.env.SENDGRID_SENDER_EMAIL}>`,
+    from: `Alex Martinez <${process.env.SENDGRID_SENDER_EMAIL}>`,
     to: email,
     subject: "Data Insight Report",
-    text: "This is the data insight report",
-    html: "<b>This is the data insight report</b>", // html body
+    text: "Hi,\nThis is the data insight report.\nBest.",
+    html: "<p>Hi</p><p>This is the data insight report</p><p>Best.</p>", // html body
     attachments: [
       {
         filename: "file.pdf",
