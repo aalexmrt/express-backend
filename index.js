@@ -35,7 +35,11 @@ const transporter = nodemailer.createTransport({
 });
 
 app.post("/export", async (req, res) => {
-  const dashboardUrl = "http://localhost:3000/hidden-dashboard";
+  const body = req.body;
+  const dashboardUrl = body?.dashboardUrl;
+  if (!dashboardUrl) {
+    return res.status(400).send("Please provide a valid URL");
+  }
 
   const pdfBuffer = await exportDashboard(dashboardUrl);
 
