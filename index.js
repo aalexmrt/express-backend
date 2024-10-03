@@ -5,7 +5,11 @@ const app = express();
 const port = 3001;
 const nodemailer = require("nodemailer");
 
-app.use(cors());
+const corsOptions = {
+  origin: "http://localhost:3000",
+};
+
+app.use(cors(corsOptions));
 
 const exportDashboard = async (url) => {
   const browser = await puppeteer.launch();
@@ -27,9 +31,6 @@ const transporter = nodemailer.createTransport({
     user: "apikey",
     pass: process.env.SENDGRID_API_KEY,
   },
-});
-app.get("/", (req, res) => {
-  res.send("Hello World!");
 });
 
 app.post("/export", async (req, res) => {
