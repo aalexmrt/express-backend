@@ -1,9 +1,11 @@
-const express = require("express");
-const puppeteer = require("puppeteer");
-var cors = require("cors");
+import express from "express";
+import puppeteer from "puppeteer";
+import cors from "cors";
+import nodemailer from "nodemailer";
+import { getAuth0AccessToken } from "./auth0.js";
+
 const app = express();
-const port = 3001;
-const nodemailer = require("nodemailer");
+const port = 3001; // Port number for the server
 
 const corsOptions = {
   origin: "http://localhost:3000",
@@ -13,8 +15,13 @@ app.use(cors(corsOptions));
 app.use(express.json());
 
 const exportDashboard = async (url) => {
+  const accessToken = await getAuth0AccessToken();
+
   const browser = await puppeteer.launch();
   const page = await browser.newPage();
+  await page.setExtraHTTPHeaders({
+    Authorization: `Bearer ${accessToken}`,
+  });
   await page.goto(url, { waitUntil: "networkidle0" });
   await page.setViewport({ width: 1080, height: 1920, deviceScaleFactor: 2 });
   await page.emulateMediaType("screen");
