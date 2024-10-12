@@ -5,10 +5,10 @@ import nodemailer from "nodemailer";
 import { getAuth0AccessToken } from "./auth0.js";
 
 const app = express();
-const port = 3001; // Port number for the server
+const port = process.env.PORT; // Port number for the server
 
 const corsOptions = {
-  origin: "http://localhost:3000",
+  origin: process.env.NEXTJS_APP_URL,
 };
 
 app.use(cors(corsOptions));
