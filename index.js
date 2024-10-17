@@ -8,7 +8,7 @@ const app = express();
 const port = process.env.PORT; // Port number for the server
 
 const corsOptions = {
-  origin: process.env.NEXTJS_APP_URL,
+  origin: process.env.PUBLIC_APP_URL,
 };
 
 app.use(cors(corsOptions));
@@ -17,12 +17,22 @@ app.use(express.json());
 const exportDashboard = async (url) => {
   const accessToken = await getAuth0AccessToken();
 
-  const browser = await puppeteer.launch();
+  const browser = await puppeteer.launch({
+    executablePath: "/usr/bin/chromium-browser",
+    args: [
+      "--no-sandbox",
+      "--headless",
+      "--disable-gpu",
+      "--disable-dev-shm-usage",
+    ],
+  });
   const page = await browser.newPage();
   await page.setExtraHTTPHeaders({
     Authorization: `Bearer ${accessToken}`,
   });
-  await page.goto(url, { waitUntil: "networkidle0" });
+  await page.goto(`${process.env.APP_URL}/${url}`, {
+    waitUntil: "networkidle0",
+  });
   await page.setViewport({ width: 1080, height: 1920, deviceScaleFactor: 2 });
   await page.emulateMediaType("screen");
 
@@ -93,6 +103,11 @@ app.post("/send-email", async (req, res) => {
   });
 
   res.send(`Message sent: ${info.messageId}`);
+});
+
+app.get("/health", (req, res) => {
+  res.send("OK");
+  res.status(200);
 });
 
 app.listen(port, () => {
