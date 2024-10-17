@@ -6,12 +6,11 @@ RUN apk add --no-cache \
     udev \
     ttf-freefont \
     chromium
-    
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD true
 ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
 
 
-WORKDIR /usr/app
+WORKDIR /express-backend
 # install dependencies
 COPY ./package.json ./
 RUN npm install
@@ -20,4 +19,4 @@ COPY ./ ./
 EXPOSE 3001
 
 # Default command
-CMD ["npm", "start"]
+CMD ["npm", "run", "start:dev"]
