@@ -3,7 +3,7 @@ import puppeteer from "puppeteer";
 import cors from "cors";
 import nodemailer from "nodemailer";
 import { getAuth0AccessToken } from "./auth0.js";
-
+import axios from "axios";
 const app = express();
 const port = process.env.PORT; // Port number for the server
 
@@ -75,34 +75,39 @@ app.post("/export", async (req, res) => {
   res.send(buffer);
 });
 
+// Receive invoices files, receive customer data, receive organization data
+
 app.post("/send-email", async (req, res) => {
-  const body = req.body;
-  const email = body?.email;
-  if (!email) {
-    return res.status(400).send("Please provide an email");
+  const { body } = req.body;
+  console.log(body);
+  if (!body.from || !body.to || !body.subject || !body.text || !body.html) {
+    return res.status(400).send("Please provide all the required params");
   }
 
-  const dashboardUrl = body?.dashboardUrl;
-  if (!dashboardUrl) {
-    return res.status(400).send("Please provide a valid URL");
-  }
-  const pdfBuffer = await exportDashboard(dashboardUrl);
+  const from = `${body.from} <${process.env.SENDGRID_SENDER_EMAIL}>`;
 
-  const info = await transporter.sendMail({
-    from: `Alex Martinez <${process.env.SENDGRID_SENDER_EMAIL}>`,
-    to: email,
-    subject: "Data Insight Report",
-    text: "Hi,\nThis is the data insight report.\nBest.",
-    html: "<p>Hi</p><p>This is the data insight report</p><p>Best.</p>", // html body
-    attachments: [
-      {
-        filename: "file.pdf",
-        content: pdfBuffer,
-      },
-    ],
+  const getPdfFiles = await Promise.all(
+    body.attachments.map(async ({ filename, contentUrl }) => {
+      const pdfFile = await axios.get(contentUrl, {
+        responseType: "arraybuffer",
+      });
+
+      return {
+        filename,
+        content: pdfFile.data,
+      };
+    })
+  );
+
+  const sentEmail = await transporter.sendMail({
+    from,
+    to: body.to,
+    subject: body.subject,
+    text: body.text,
+    html: body.html,
+    attachments: getPdfFiles,
   });
-
-  res.send(`Message sent: ${info.messageId}`);
+  res.send(`Message sent: ${sentEmail.messageId}`);
 });
 
 app.get("/health", (req, res) => {
