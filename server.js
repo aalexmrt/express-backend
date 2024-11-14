@@ -107,7 +107,8 @@ app.post("/send-email", async (req, res) => {
     html: body.html,
     attachments: getPdfFiles,
   });
-  res.send(`Message sent: ${sentEmail.messageId}`);
+
+  res.send(`Message sent: ${sentEmail}`);
 });
 
 app.get("/health", (req, res) => {
